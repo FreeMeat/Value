@@ -1,17 +1,25 @@
 import streamlit as st
 import requests
-from bs4 import BeautifulSoup
 import time
 from datetime import datetime
 
-# -------------------------------
-# GUI KONFIGURATION
-# -------------------------------
+# Versuchen Sie, BeautifulSoup zu importieren
+try:
+    from bs4 import BeautifulSoup
+    bs4_available = True
+except ImportError:
+    bs4_available = False
+    st.error("""
+    **Fehlendes Modul: BeautifulSoup**  
+    Bitte installieren Sie die benötigten Bibliotheken mit:  
+    `pip install beautifulsoup4 requests streamlit`
+    """)
+
+# GUI-Konfiguration
 st.set_page_config(
     page_title="🚀 Value Investor Pro",
-    layout="wide",
-    page_icon="💼",
-    initial_sidebar_state="expanded"
+    layout="centered",
+    page_icon="💼"
 )
 
 # CSS für modernes Design
@@ -20,12 +28,6 @@ st.markdown("""
     /* Hauptdesign */
     [data-testid="stAppViewContainer"] {
         background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
-    }
-    
-    /* Sidebar */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(195deg, #2c3e50 0%, #1a2530 100%) !important;
-        box-shadow: 5px 0 15px rgba(0,0,0,0.1);
     }
     
     /* Widgets */
@@ -45,11 +47,7 @@ st.markdown("""
         border: none;
         box-shadow: 0 4px 6px rgba(50, 152, 255, 0.3);
         transition: all 0.3s ease;
-    }
-    
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 8px rgba(50, 152, 255, 0.4);
+        margin-top: 15px;
     }
     
     /* Karten */
@@ -58,14 +56,8 @@ st.markdown("""
         border-radius: 16px;
         padding: 25px;
         box-shadow: 0 6px 16px rgba(0,0,0,0.08);
-        margin-bottom: 20px;
-        transition: all 0.3s ease;
+        margin: 20px 0;
         border: 1px solid #eef2f6;
-    }
-    
-    .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 20px rgba(0,0,0,0.12);
     }
     
     .metric-title {
@@ -87,21 +79,14 @@ st.markdown("""
         font-weight: 800 !important;
         text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
     }
-    
-    /* Tabs */
-    [role="tab"] {
-        border-radius: 12px !important;
-        padding: 10px 20px !important;
-        margin: 0 5px !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------------------
-# FUNKTIONEN
-# -------------------------------
+# Funktionen
 def get_financial_data(isin):
-    """Holt Finanzdaten von OnVista mit Chrome-Header"""
+    if not bs4_available:
+        return None
+        
     try:
         url = f"https://www.onvista.de/aktien/{isin}"
         headers = {
@@ -121,10 +106,7 @@ def get_financial_data(isin):
         metric_keys = {
             "KGV": "KGV (aktuell)",
             "KBV": "KBV",
-            "KUV": "KUV",
-            "Dividendenrendite": "Dividendenrendite",
-            "Eigenkapitalrendite": "Eigenkapitalrendite",
-            "Marktkapitalisierung": "Marktkapitalisierung"
+            "Dividendenrendite": "Dividendenrendite"
         }
         
         for key, value in metric_keys.items():
@@ -141,62 +123,47 @@ def get_financial_data(isin):
         st.error(f"Fehler beim Datenabruf: {str(e)}")
         return None
 
-# -------------------------------
-# SIDEBAR - EINGABEBEREICH
-# -------------------------------
-with st.sidebar:
-    st.image("https://i.imgur.com/zQeYq5H.png", width=200)  # Platzhalter für Logo
-    st.header("🔍 Unternehmensanalyse")
-    
-    isin = st.text_input(
-        "ISIN eingeben:",
-        placeholder="DE000BASF111",
-        max_chars=15,
-        key="isin_input"
-    )
-    
-    analyze_btn = st.button(
-        "🚀 Analyse starten", 
-        type="primary", 
-        use_container_width=True
-    )
-    
-    st.markdown("---")
-    st.markdown("""
-    **💡 Tipps:**
-    - BASF: DE000BASF111
-    - Siemens: DE0007236101
-    - Allianz: DE0008404005
-    - Adidas: DE000A1EWWW0
-    """)
-    
-    st.markdown("---")
-    st.markdown("""
-    **ℹ️ Info:**
-    Diese App bewertet Unternehmen nach der Value-Investing-Strategie 
-    mit Daten von [OnVista](https://www.onvista.de).
-    """)
-
-# -------------------------------
-# HAUPTINHALT
-# -------------------------------
+# Haupt-GUI
 st.title("💰 Value Investor Pro")
 st.caption("Professionelle Unternehmensbewertung nach der Value-Strategie")
 
-# Tabs für verschiedene Ansichten
-tab1, tab2, tab3 = st.tabs(["📊 Aktienanalyse", "📈 Kennzahlen", "💡 Value-Bewertung"])
+# Eingabebereich
+col1, col2 = st.columns([3,1])
+with col1:
+    isin = st.text_input(
+        "ISIN eingeben:",
+        placeholder="DE000BASF111",
+        max_chars=15
+    )
+with col2:
+    analyze_btn = st.button(
+        "🚀 Analyse starten", 
+        type="primary"
+    )
 
-with tab1:
-    if analyze_btn and isin:
+# Beispiel-ISINs
+st.markdown("""
+**💡 Beispiele:**
+- BASF: DE000BASF111
+- Siemens: DE0007236101
+- Allianz: DE0008404005
+- Adidas: DE000A1EWWW0
+""")
+
+# Ergebnisanzeige
+if analyze_btn and isin:
+    if not bs4_available:
+        st.error("BeautifulSoup ist nicht installiert. Bitte installieren Sie die benötigten Bibliotheken.")
+    else:
         with st.spinner("Daten werden abgerufen..."):
             data = get_financial_data(isin)
-            time.sleep(1.5)  # Für Ladeanimation
+            time.sleep(1.5)
             
         if data:
-            # Header mit Unternehmensname
+            # Unternehmensname
             st.success(f"## 📈 {data['Name']}")
             
-            # Hauptmetriken in Karten
+            # Metriken in Karten
             col1, col2, col3 = st.columns(3)
             
             with col1:
@@ -210,7 +177,7 @@ with tab1:
             with col2:
                 st.markdown(f"""
                 <div class="metric-card">
-                    <div class="metric-title">KGV (Kurs-Gewinn-Verhältnis)</div>
+                    <div class="metric-title">KGV</div>
                     <div class="metric-value">{data['KGV']}</div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -223,90 +190,47 @@ with tab1:
                 </div>
                 """, unsafe_allow_html=True)
             
-            # Detaillierte Kennzahlen
-            st.subheader("📝 Weitere Finanzkennzahlen")
-            col4, col5, col6 = st.columns(3)
-            
-            with col4:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">KBV (Kurs-Buchwert-Verhältnis)</div>
-                    <div class="metric-value">{data['KBV']}</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-            with col5:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">KUV (Kurs-Umsatz-Verhältnis)</div>
-                    <div class="metric-value">{data['KUV']}</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-            with col6:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">Eigenkapitalrendite</div>
-                    <div class="metric-value">{data['Eigenkapitalrendite']}</div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            # Marktkapitalisierung
+            # KBV anzeigen
             st.markdown(f"""
             <div class="metric-card">
-                <div class="metric-title">Marktkapitalisierung</div>
-                <div class="metric-value">{data['Marktkapitalisierung']}</div>
+                <div class="metric-title">KBV (Kurs-Buchwert-Verhältnis)</div>
+                <div class="metric-value">{data['KBV']}</div>
             </div>
             """, unsafe_allow_html=True)
             
             # Zeitstempel
             st.caption(f"Letzte Aktualisierung: {datetime.now().strftime('%d.%m.%Y %H:%M')}")
             
-    elif not isin and analyze_btn:
-        st.warning("Bitte geben Sie eine ISIN in der Sidebar ein")
-    else:
-        # Platzhalter für Startbildschirm
-        st.info("ℹ️ Geben Sie eine ISIN in der linken Sidebar ein und klicken Sie auf 'Analyse starten'")
-        st.image("https://i.imgur.com/3JmBLLx.png", width=500)  # Platzhalter Grafik
+elif analyze_btn and not isin:
+    st.warning("Bitte geben Sie eine ISIN ein")
 
-with tab2:
-    st.subheader("📈 Bedeutung der Kennzahlen")
+# Erklärungen
+st.markdown("---")
+st.subheader("📝 Bedeutung der Kennzahlen")
+
+col1, col2 = st.columns(2)
+with col1:
     st.markdown("""
     <div class="metric-card">
         <h3>KGV (Kurs-Gewinn-Verhältnis)</h3>
-        <p>Bewertet den Preis im Verhältnis zum Gewinn pro Aktie. Value-Investoren bevorzugen ein KGV unter 15.</p>
-    </div>
-    
-    <div class="metric-card">
-        <h3>KBV (Kurs-Buchwert-Verhältnis)</h3>
-        <p>Zeigt das Verhältnis von Marktpreis zum Buchwert je Aktie. Ein KBV unter 1,5 gilt als günstig.</p>
-    </div>
-    
-    <div class="metric-card">
-        <h3>Dividendenrendite</h3>
-        <p>Die jährliche Dividende dividiert durch den Aktienkurs. Value-Investoren suchen Werte über 3%.</p>
+        <p>Bewertet den Preis im Verhältnis zum Gewinn pro Aktie.<br>
+        <strong>Value-Richtwert:</strong> Unter 15</p>
     </div>
     """, unsafe_allow_html=True)
 
-with tab3:
-    st.subheader("💡 Value-Investing Strategie")
+with col2:
     st.markdown("""
     <div class="metric-card">
-        <h3>Die 4 Prinzipien des Value-Investings</h3>
-        <ol>
-            <li><strong>Margin of Safety:</strong> Nur kaufen, wenn ein deutlicher Abschlag auf den inneren Wert besteht</li>
-            <li><strong>Fundamentalanalyse:</strong> Konzentration auf Bilanzkennzahlen statt Markttrends</li>
-            <li><strong>Langfristige Perspektive:</strong> Mindestens 5-10 Jahre Haltefrist</li>
-            <li><strong>Emotionsloses Investieren:</strong> Rationale Entscheidungen basierend auf Zahlen</li>
-        </ol>
+        <h3>KBV (Kurs-Buchwert-Verhältnis)</h3>
+        <p>Zeigt das Verhältnis von Marktpreis zum Buchwert je Aktie.<br>
+        <strong>Value-Richtwert:</strong> Unter 1.5</p>
     </div>
     """, unsafe_allow_html=True)
-    st.image("https://i.imgur.com/Y7VkGfQ.png", caption="Value vs. Growth Investing", width=500)
 
 # Footer
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; padding: 20px; color: #777;">
-    © 2023 Value Investor Pro | Datenquelle: OnVista | Diese App dient nur zu Informationszwecken
+    © 2023 Value Investor Pro | Datenquelle: OnVista
 </div>
 """, unsafe_allow_html=True)
