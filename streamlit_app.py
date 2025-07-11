@@ -1,120 +1,77 @@
 import streamlit as st
 import requests
+import sys
+import subprocess
 import time
 from datetime import datetime
 
-# Versuchen Sie, BeautifulSoup zu importieren
+# Prüfen, ob BeautifulSoup installiert ist
 try:
     from bs4 import BeautifulSoup
     bs4_available = True
 except ImportError:
     bs4_available = False
-    st.error("""
-    **Fehlendes Modul: BeautifulSoup**  
-    Bitte installieren Sie die benötigten Bibliotheken mit:  
-    `pip install beautifulsoup4 requests streamlit`
-    """)
 
-# GUI-Konfiguration mit schwarzem Design
+# Elegantes schwarzes Design
 st.set_page_config(
     page_title="🚀 Value Investor Pro",
     layout="centered",
     page_icon="💼"
 )
 
-# Elegantes schwarzes Design
+# CSS für schwarzes Design
 st.markdown("""
 <style>
-    /* Hauptdesign - Dunkler Hintergrund */
     [data-testid="stAppViewContainer"] {
         background-color: #000000;
         color: #ffffff;
     }
-    
-    /* Widgets */
     .stTextInput>div>div>input {
-        border-radius: 12px;
-        padding: 12px 15px;
-        border: 1px solid #333333;
         background-color: #111111;
         color: #ffffff;
-        font-size: 16px;
-    }
-    
-    .stButton>button {
-        border-radius: 12px;
-        background: linear-gradient(to right, #1a73e8 0%, #0d47a1 100%) !important;
-        color: white !important;
-        font-weight: bold;
-        padding: 10px 24px;
-        border: none;
-        box-shadow: 0 4px 6px rgba(13, 71, 161, 0.4);
-        transition: all 0.3s ease;
-        margin-top: 15px;
-    }
-    
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 8px rgba(13, 71, 161, 0.6);
-    }
-    
-    /* Karten - Dunkle Karten mit hellem Text */
-    .metric-card {
-        background: #121212;
-        border-radius: 16px;
-        padding: 25px;
-        box-shadow: 0 6px 16px rgba(0,0,0,0.5);
-        margin: 20px 0;
         border: 1px solid #333333;
     }
-    
-    .metric-title {
-        color: #bbbbbb;
-        font-size: 16px;
-        margin-bottom: 8px;
-        font-weight: 600;
+    .metric-card {
+        background: #121212;
+        border: 1px solid #333333;
+        color: #ffffff;
     }
-    
-    .metric-value {
-        color: #1a73e8;
-        font-size: 28px;
-        font-weight: 700;
-    }
-    
-    /* Header */
-    h1, h2, h3, h4, h5, h6 {
+    h1, h2, h3, h4, h5, h6, p {
         color: #ffffff !important;
-    }
-    
-    /* Allgemeine Textfarben */
-    body, .stMarkdown, .st-c7, .stTextInput>div>div>label, .st-cq, .stAlert, .stWarning, .stSuccess {
-        color: #ffffff !important;
-    }
-    
-    /* Trennlinien */
-    hr {
-        border-color: #333333;
-    }
-    
-    /* Platzhalter für fehlende Werte */
-    .na-value {
-        color: #888888;
-        font-style: italic;
-    }
-    
-    /* Sidebar */
-    [data-testid="stSidebar"] {
-        background-color: #111111 !important;
-        border-right: 1px solid #333333;
     }
 </style>
 """, unsafe_allow_html=True)
 
+# Haupt-GUI
+st.title("🚀 Value Investor Pro")
+
+# Installationsanweisung, wenn BeautifulSoup fehlt
+if not bs4_available:
+    st.error("""
+    **Erforderliche Bibliotheken nicht installiert!**
+    
+    Bitte führen Sie folgenden Befehl in Ihrem Terminal aus:
+    ```bash
+    pip install beautifulsoup4 requests streamlit
+    ```
+    
+    Alternativ können Sie die Bibliotheken direkt von hier installieren:
+    """)
+    
+    if st.button("📦 Bibliotheken jetzt installieren", type="primary"):
+        with st.spinner("Installiere BeautifulSoup und Requests..."):
+            try:
+                # Versuch, Bibliotheken zu installieren
+                subprocess.check_call([sys.executable, "-m", "pip", "install", 
+                                     "beautifulsoup4", "requests", "streamlit"])
+                st.success("Installation erfolgreich! Bitte starten Sie die App neu.")
+                st.balloons()
+            except Exception as e:
+                st.error(f"Installation fehlgeschlagen: {str(e)}")
+    return
+
 # Funktionen
 def get_financial_data(isin):
-    if not bs4_available:
-        return None
-        
     try:
         url = f"https://www.onvista.de/aktien/{isin}"
         headers = {
@@ -153,18 +110,14 @@ def get_financial_data(isin):
         st.error(f"Fehler beim Datenabruf: {str(e)}")
         return None
 
-# Haupt-GUI
-st.title("🚀 Value Investor Pro")
-st.markdown("Unternehmensbewertung mit schwarzem Design für optimale Lesbarkeit")
-
 # Eingabebereich
+st.markdown("Unternehmensbewertung mit schwarzem Design für optimale Lesbarkeit")
 col1, col2 = st.columns([3,1])
 with col1:
     isin = st.text_input(
         "**ISIN eingeben:**",
         placeholder="DE000BASF111",
-        max_chars=15,
-        help="Geben Sie die ISIN des Unternehmens ein, z.B. DE000BASF111 für BASF"
+        max_chars=15
     )
 with col2:
     analyze_btn = st.button(
@@ -172,7 +125,7 @@ with col2:
         type="primary"
     )
 
-# Beispiel-ISINs mit schwarzem Design
+# Beispiel-ISINs
 st.markdown("""
 <div class="metric-card">
     <h3>💡 Beispiel-ISINs</h3>
@@ -185,116 +138,45 @@ st.markdown("""
 
 # Ergebnisanzeige
 if analyze_btn and isin:
-    if not bs4_available:
-        st.error("BeautifulSoup ist nicht installiert. Bitte installieren Sie die benötigten Bibliotheken.")
-    else:
-        with st.spinner("Daten werden abgerufen..."):
-            data = get_financial_data(isin)
-            time.sleep(1.5)
-            
-        if data:
-            # Unternehmensname
-            st.success(f"## 📈 {data['Name']}")
-            
-            # Metriken in Karten
-            col1, col2, col3 = st.columns(3)
-            
-            with col1:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">Aktueller Preis</div>
-                    <div class="metric-value">{data['Preis']}</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-            with col2:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">KGV</div>
-                    <div class="metric-value">{data['KGV']}</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-            with col3:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">Dividendenrendite</div>
-                    <div class="metric-value">{data['Dividendenrendite']}</div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            # Zweite Reihe
-            col4, col5, col6 = st.columns(3)
-            
-            with col4:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">KBV</div>
-                    <div class="metric-value">{data['KBV']}</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-            with col5:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">Eigenkapitalrendite</div>
-                    <div class="metric-value">{data['Eigenkapitalrendite']}</div>
-                </div>
-                """, unsafe_allow_html=True)
-                
-            with col6:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">Marktkapitalisierung</div>
-                    <div class="metric-value">{data['Marktkapitalisierung']}</div>
-                </div>
-                """, unsafe_allow_html=True)
-            
-            # Zeitstempel
-            st.markdown(f"<div style='color: #bbbbbb; text-align: right;'>Letzte Aktualisierung: {datetime.now().strftime('%d.%m.%Y %H:%M')}</div>", unsafe_allow_html=True)
-            
+    with st.spinner("Daten werden abgerufen..."):
+        data = get_financial_data(isin)
+        time.sleep(1.5)
+        
+    if data:
+        st.success(f"## 📈 {data['Name']}")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div>Preis</div>
+                <h2>{data['Preis']}</h2>
+            </div>
+            """, unsafe_allow_html=True)
+        with col2:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div>KGV</div>
+                <h2>{data['KGV']}</h2>
+            </div>
+            """, unsafe_allow_html=True)
+        with col3:
+            st.markdown(f"""
+            <div class="metric-card">
+                <div>Dividendenrendite</div>
+                <h2>{data['Dividendenrendite']}</h2>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown(f"<div style='color: #bbbbbb; text-align: right;'>Letzte Aktualisierung: {datetime.now().strftime('%d.%m.%Y %H:%M')}</div>", unsafe_allow_html=True)
+        
 elif analyze_btn and not isin:
     st.warning("Bitte geben Sie eine ISIN ein")
-
-# Erklärungen mit schwarzem Design
-st.markdown("---")
-st.subheader("📚 Bedeutung der Kennzahlen")
-
-col1, col2 = st.columns(2)
-with col1:
-    st.markdown("""
-    <div class="metric-card">
-        <h3>KGV (Kurs-Gewinn-Verhältnis)</h3>
-        <p>Bewertet den Preis im Verhältnis zum Gewinn pro Aktie.<br>
-        <strong>Value-Richtwert:</strong> Unter 15</p>
-    </div>
-    
-    <div class="metric-card">
-        <h3>Dividendenrendite</h3>
-        <p>Die jährliche Dividende dividiert durch den Aktienkurs.<br>
-        <strong>Value-Richtwert:</strong> Über 3%</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-with col2:
-    st.markdown("""
-    <div class="metric-card">
-        <h3>KBV (Kurs-Buchwert-Verhältnis)</h3>
-        <p>Zeigt das Verhältnis von Marktpreis zum Buchwert je Aktie.<br>
-        <strong>Value-Richtwert:</strong> Unter 1.5</p>
-    </div>
-    
-    <div class="metric-card">
-        <h3>Eigenkapitalrendite</h3>
-        <p>Misst die Profitabilität des eingesetzten Eigenkapitals.<br>
-        <strong>Value-Richtwert:</strong> Über 10%</p>
-    </div>
-    """, unsafe_allow_html=True)
 
 # Footer
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; padding: 20px; color: #888;">
-    © 2023 Value Investor Pro | Datenquelle: OnVista | Schwarzes Design für optimale Lesbarkeit
+    © 2023 Value Investor Pro | Datenquelle: OnVista
 </div>
 """, unsafe_allow_html=True)
